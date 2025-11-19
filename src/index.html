@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>IEE 505</title>
+    </head>
+    <body>
+        <div>ID: <input type="number" id="id"></div>
+        <div>Name: <input type="text" id="name"></div>
+        <div>
+            <input value="Load" type="button" onclick="loadUser()">
+            <input value="Save" type="button" onclick="saveUser()">
+            <input value="Delete" type="button" onclick="deleteUser()">
+        </div>
+    </body>
+    <script>
+        console.log("Hello World");
+        async function loadUser() {
+            const request = new Request(
+                "/users/" + document.getElementById("id").value,
+                {
+                    "method": "GET"
+                }
+            )
+            const response = await fetch(request);
+            const json = await response.json();
+            if(!response.ok) {
+                alert("Invalid id: " + document.getElementById("id").value)
+            } else {
+                document.getElementById("id").value = json["id"];
+                document.getElementById("name").value = json["name"];
+            }
+        }
+        async function saveUser() {
+            if(document.getElementById("id").value === "") {
+                const newUser = {
+                    "name": document.getElementById("name").value
+                }
+                const request = new Request(
+                    "/users",
+                    {
+                        "method": "POST",
+                        "headers": {"Content-Type": "application/json"},
+                        "body": JSON.stringify(newUser)
+                    }
+                )
+                const response = await fetch(request);
+                const newId = await response.text();
+                document.getElementById("id").value = newId;
+            } else {
+                const modifiedUser = {
+                    "name": document.getElementById("name").value
+                }
+                const request = new Request(
+                    "/users/" + document.getElementById("id").value,
+                    {
+                        "method": "PUT",
+                        "headers": {"Content-Type": "application/json"},
+                        "body": JSON.stringify(modifiedUser)
+                    }
+                )
+                const response = await fetch(request);
+                if(!response.ok) {
+                    alert("Invalid id: " + document.getElementById("id").value)
+                }
+            }
+
+        }
+        async function deleteUser() {
+            const request = new Request(
+                "/users/" + document.getElementById("id").value,
+                {
+                    "method": "DELETE"
+                }
+            )
+            const response = await fetch(request);
+            if(!response.ok) {
+                alert("Invalid id: " + document.getElementById("id").value)
+            } else {
+                document.getElementById("id").value = "";
+                document.getElementById("name").value = "";
+            }
+        }
+    </script>
+</html>
