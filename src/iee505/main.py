@@ -1,10 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
-from sqlmodel import Field, Session, SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine
 
-class User(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    name: str
+from .models import User, UserCreate, UserRead
 
 engine = create_engine(
     "sqlite:///database.db", 
@@ -22,8 +20,6 @@ def connect():
     with Session(engine) as session:
         yield session
 
-class UserCreate(SQLModel):
-    name: str
 
 @app.post("/users")
 async def create_user(
@@ -36,9 +32,6 @@ async def create_user(
     session.refresh(db_user)
     return db_user.id
 
-class UserRead(SQLModel):
-    id: int
-    name: str
 
 @app.get("/users/{id}")
 async def read_user(

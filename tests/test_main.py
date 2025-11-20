@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
-from main_orm import app, connect
+from iee505.main import app, connect
 
 @pytest.fixture(name="session")
 def session_fixture():
@@ -22,7 +22,7 @@ def client_fixture(session: Session):
     yield client
     app.dependency_overrides.clear()
 
-from main_orm import User
+from iee505.main import User
 
 def test_get_user(session: Session, client: TestClient):
     # add test data on backend

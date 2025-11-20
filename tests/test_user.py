@@ -1,4 +1,4 @@
-from main_orm import User
+from iee505.models import User
 
 def test_user_set_id():
     user = User(id=1, name="Paul Grogan")
