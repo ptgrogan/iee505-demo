@@ -1,0 +1,36 @@
+services:
+  traefik:
+    image: traefik:v3
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - letsencrypt:/letsencrypt
+    command:
+      - --log.level=INFO
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entryPoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.asDefault=true
+      - --entrypoints.websecure.http.tls.certresolver=myresolver
+      - --certificatesresolvers.myresolver.acme.tlschallenge=true
+      # - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.myresolver.acme.email=pgrogan1@asu.edu
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+    labels:
+      - traefik.enable=false
+  iee505:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.stratdyn.rule=Host(`iee505.code-lab.org`)
+      - traefik.http.services.stratdyn.loadbalancer.server.port=8000
+volumes:
+  letsencrypt:
