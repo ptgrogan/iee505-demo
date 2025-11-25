@@ -12,6 +12,14 @@ engine = create_engine(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     SQLModel.metadata.create_all(engine)
+    from .auth import Account, pwd_hash
+    with Session(engine) as session:
+        try:
+            admin=Account(username="admin", hashed_password=pwd_hash.hash("password"))
+            session.add(admin)
+            session.commit()
+        except Exception:
+            pass
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -75,6 +83,40 @@ async def delete_user(
         raise HTTPException(404, f"User {id} not found")
     session.delete(db_user)
     session.commit()
+
+from typing import Annotated
+from datetime import timedelta
+from fastapi import status
+from fastapi.security import OAuth2PasswordRequestForm
+from .auth import AccountRead, authenticate, create_token, get_current_account, TOKEN_DURATION
+
+class Token(SQLModel):
+    access_token: str
+    token_type: str
+
+@app.post("/token")
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    session: Session = Depends(connect)
+) -> Token:
+    account = authenticate(session, form_data.username, form_data.password)
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_token(
+        username=account.username,
+        duration=timedelta(minutes=TOKEN_DURATION)
+    )
+    return Token(access_token=access_token, token_type="bearer")
+
+@app.get("/accounts/me/")
+async def read_accounts_me(
+    current_account: Annotated[AccountRead, Depends(get_current_account)],
+) -> AccountRead:
+    return current_account
 
 from fastapi.staticfiles import StaticFiles
 
